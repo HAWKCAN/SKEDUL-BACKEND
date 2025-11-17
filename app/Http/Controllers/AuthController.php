@@ -38,12 +38,13 @@ class AuthController extends Controller
             'role' => 'required|in:admin,dosen,mahasiswa',
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
+            $user = User::create([
+            'name' => $request->input('name', 'User Tanpa Nama'),
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
         ]);
+
 
         return response()->json([
             'message' => 'User berhasil dibuat',
