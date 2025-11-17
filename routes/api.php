@@ -4,6 +4,8 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
 
 // 🔹 Route yang hanya bisa diakses oleh admin
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {

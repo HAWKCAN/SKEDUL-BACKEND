@@ -25,25 +25,36 @@ class AuthController extends Controller
     }
 
     public function register(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|min:6',
+                'role' => 'required|in:admin,dosen,mahasiswa',
+            ]);
+
+            $user = User::create([
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => $validated['role'],
+            ]);
+
+            return response()->json([
+                'message' => 'User berhasil dibuat',
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat register',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function logout(Request $request)
 {
-    $validated = $request->validate([
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|min:6',
-        'role' => 'required|in:dosen,mahasiswa',
-    ]);
+    $request->user()->currentAccessToken()->delete();
 
-    $user = \App\Models\User::create([
-        'email' => $validated['email'],
-        'password' => bcrypt($validated['password']),
-        'role' => $validated['role'],
-    ]);
-
-    return response()->json([
-        'message' => 'Akun baru berhasil dibuat',
-        'user' => $user
-    ]);
+    return response()->json(['message' => 'Logout berhasil']);
 }
-
-
 
 }
