@@ -28,33 +28,35 @@ class AuthController extends Controller
 ]);
     }
 
-    public function register(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'email' => 'required|email|unique:users,email',
-                'password' => 'required|min:6',
-                'role' => 'required|in:admin,dosen,mahasiswa',
-            ]);
+ public function register(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'role' => 'required|in:admin,dosen,mahasiswa',
+        ]);
 
-            $user = User::create([
-                 'name' => $request->name,
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'role' => $validated['role'],
-            ]);
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+        ]);
 
-            return response()->json([
-                'message' => 'User berhasil dibuat',
-                'user' => $user
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Terjadi kesalahan saat register',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'User berhasil dibuat',
+            'user' => $user
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Terjadi kesalahan saat register',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
     public function logout(Request $request)
 {
     $request->user()->currentAccessToken()->delete();
