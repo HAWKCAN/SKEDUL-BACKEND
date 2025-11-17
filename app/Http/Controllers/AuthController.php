@@ -18,10 +18,14 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'user'  => $user,
-            'token' => $token
-        ]);
+    return response()->json([
+    'user' => [
+        'name' => $user->name,
+        'role' => $user->role,
+        'email' => $user->email,
+    ],
+    'token' => $token,
+]);
     }
 
     public function register(Request $request)
@@ -34,6 +38,7 @@ class AuthController extends Controller
             ]);
 
             $user = User::create([
+                 'name' => $request->name,
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'role' => $validated['role'],
