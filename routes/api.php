@@ -8,10 +8,6 @@ use App\Http\Controllers\KelasController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth:sanctum');
-
-// Semua user login bisa lihat kelas
-Route::middleware('auth:sanctum')->get('/kelas', [KelasController::class, 'index']);
-
 // Mahasiswa
 Route::middleware(['auth:sanctum', 'role:mahasiswa'])->group(function () {
     Route::get('/mahasiswa/kelas', [KelasController::class, 'index']);
