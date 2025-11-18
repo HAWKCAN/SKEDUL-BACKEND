@@ -1,4 +1,13 @@
-public function index()
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Kelas;
+use Illuminate\Support\Facades\DB;
+
+class KelasController extends Controller
+{
+    public function index()
 {
     $now = now();
 
@@ -45,4 +54,6 @@ public function index()
     }
 
     return response()->json($kelas);
+}
+
 }
