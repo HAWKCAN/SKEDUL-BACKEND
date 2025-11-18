@@ -1,56 +1,48 @@
-<?php
-
-namespace App\Http\Controllers;
-
-use App\Models\Kelas;
-use Illuminate\Support\Facades\DB;
-
-class KelasController extends Controller
+public function index()
 {
-    public function index()
-    {
-        $now = now();
+    $now = now();
 
-        $kelas = Kelas::all()->map(function ($k) use ($now) {
+    // Ambil semua kelas
+    $kelas = Kelas::all();
 
-            // cek jadwal dosen yg sedang berlangsung
-            $jadwal = DB::table('jadwal_kelas')
-                ->where('kelas_id', $k->id)
-                ->where('jam_mulai', '<=', $now)
-                ->where('jam_selesai', '>=', $now)
-                ->first();
+    // Ambil reservasi aktif (approved dan sedang berlangsung)
+    $reservasiAktif = DB::table('reservasi')
+        ->where('status', 'approved')
+        ->where('jam_mulai', '<=', $now)
+        ->where('jam_selesai', '>=', $now)
+        ->get()
+        ->keyBy('kelas_id');
 
-            // cek reservasi approved yg sedang berlangsung
-            $reservasi = DB::table('reservasi')
-                ->where('kelas_id', $k->id)
-                ->where('status', 'approved')
-                ->where('jam_mulai', '<=', $now)
-                ->where('jam_selesai', '>=', $now)
-                ->first();
+    // Ambil jadwal aktif dosen
+    $jadwalAktif = DB::table('jadwal_kelas')
+        ->where('jam_mulai', '<=', $now)
+        ->where('jam_selesai', '>=', $now)
+        ->get()
+        ->keyBy('kelas_id');
 
-            // tentukan status realtime
-            if ($jadwal) {
-                $k->status = "dipakai";
-                $k->dipakai_oleh = $jadwal->user_id;
-                $k->jam_mulai = $jadwal->jam_mulai;
-                $k->jam_selesai = $jadwal->jam_selesai;
+    // Tentukan status kelas
+    foreach ($kelas as $k) {
+        if (isset($jadwalAktif[$k->id])) {
+            $j = $jadwalAktif[$k->id];
+            $k->status = "dipakai";
+            $k->dipakai_oleh = $j->user_id;
+            $k->jam_mulai = $j->jam_mulai;
+            $k->jam_selesai = $j->jam_selesai;
 
-            } elseif ($reservasi) {
-                $k->status = "dipakai";
-                $k->dipakai_oleh = $reservasi->user_id;
-                $k->jam_mulai = $reservasi->jam_mulai;
-                $k->jam_selesai = $reservasi->jam_selesai;
+        } elseif (isset($reservasiAktif[$k->id])) {
+            $r = $reservasiAktif[$k->id];
+            $k->status = "dipakai";
+            $k->dipakai_oleh = $r->user_id;
+            $k->jam_mulai = $r->jam_mulai;
+            $k->jam_selesai = $r->jam_selesai;
 
-            } else {
-                $k->status = "tersedia";
-                $k->dipakai_oleh = null;
-                $k->jam_mulai = null;
-                $k->jam_selesai = null;
-            }
-
-            return $k;
-        });
-
-        return response()->json($kelas);
+        } else {
+            $k->status = "tersedia";
+            $k->dipakai_oleh = null;
+            $k->jam_mulai = null;
+            $k->jam_selesai = null;
+        }
     }
+
+    return response()->json($kelas);
 }
