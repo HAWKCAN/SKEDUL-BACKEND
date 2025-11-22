@@ -11,6 +11,8 @@ class JadwalKelas extends Model
     protected $fillable = [
         'kelas_id', 'user_id',
         'mata_kuliah',
-        'jam_mulai', 'jam_selesai'
+        'jam_mulai', 'jam_selesai',
+        'Hari'
+
     ];
 }

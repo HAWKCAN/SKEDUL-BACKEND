@@ -14,10 +14,11 @@ class ReservasiController extends Controller
         $req->validate([
             'kelas_id' => 'required|int',
             'jam_mulai' => 'required|date',
-            'jam_selesai' => 'required|date|after:jam_mulai'
+            'jam_selesai' => 'required|date|after:jam_mulai',
+            'Hari' => 'required|hari'
         ]);
 
-        if (adaBentrok($req->kelas_id, $req->jam_mulai, $req->jam_selesai)) {
+        if (adaBentrok($req->kelas_id, $req->jam_mulai, $req->jam_selesai, $req->hari)) {
             return response()->json(['message' => 'Bentrok jadwal.'], 409);
         }
 
@@ -26,6 +27,8 @@ class ReservasiController extends Controller
              'user_id' => $req->user()->id,
             'jam_mulai' => $req->jam_mulai,
             'jam_selesai' => $req->jam_selesai,
+            'Hari' => $req -> Hari,
+
             'alasan' => $req->alasan,
             'status' => 'pending'
         ]);
@@ -41,7 +44,7 @@ class ReservasiController extends Controller
             return response()->json(['message' => 'Reservasi tidak valid.'], 400);
         }
 
-        if (adaBentrok($res->kelas_id, $res->jam_mulai, $res->jam_selesai)) {
+        if (adaBentrok($res->kelas_id, $res->jam_mulai, $res->jam_selesai, $res->Hari)) {
             return response()->json(['message' => 'Gagal approve. Jadwal bentrok.'], 409);
         }
 

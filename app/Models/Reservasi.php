@@ -11,6 +11,7 @@ class Reservasi extends Model
     protected $fillable = [
         'kelas_id', 'user_id',
         'jam_mulai', 'jam_selesai',
-        'status', 'alasan'
+        'status', 'alasan',
+        'Hari'
     ];
 }
