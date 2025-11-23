@@ -11,8 +11,10 @@ Route::post('/logout', [AuthController::class, 'logout'])
 // Mahasiswa
 Route::middleware(['auth:sanctum', 'role:mahasiswa'])->group(function () {
     Route::get('/mahasiswa/kelas', [KelasController::class, 'index']);
+    Route::get('/mahasiswa/kelas/{id}', [KelasController::class, 'show']); //   <= TAMBAHKAN INI
     Route::post('/reservasi', [ReservasiController::class, 'store']);
 });
+
 
 // Admin
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
