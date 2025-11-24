@@ -83,37 +83,30 @@ class ReservasiController extends Controller
 
   private function adaBentrok($kelas_id, $hari, $mulai, $selesai)
 {
-    // Cek bentrok jadwal kuliah 😎
+    // Bentrok dengan jadwal kuliah
     $jadwalBentrok = JadwalKelas::where('kelas_id', $kelas_id)
         ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
         ->where(function ($q) use ($mulai, $selesai) {
-            $q->whereBetween('jam_mulai', [$mulai, $selesai])
-              ->orWhereBetween('jam_selesai', [$mulai, $selesai])
-              ->orWhere(function ($q2) use ($mulai, $selesai) {
-                  $q2->where('jam_mulai', '<=', $mulai)
-                     ->where('jam_selesai', '>=', $selesai);
-              });
+            $q->where('jam_mulai', '<', $selesai)
+              ->where('jam_selesai', '>', $mulai);
         })
         ->exists();
 
     if ($jadwalBentrok) return true;
 
-    // Cek bentrok reservasi approved
+    // Bentrok dengan reservasi approved
     $reservasiBentrok = Reservasi::where('kelas_id', $kelas_id)
         ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
         ->where('status', 'approved')
         ->where(function ($q) use ($mulai, $selesai) {
-            $q->whereBetween('jam_mulai', [$mulai, $selesai])
-              ->orWhereBetween('jam_selesai', [$mulai, $selesai])
-              ->orWhere(function ($q2) use ($mulai, $selesai) {
-                  $q2->where('jam_mulai', '<=', $mulai)
-                     ->where('jam_selesai', '>=', $selesai);
-              });
+            $q->where('jam_mulai', '<', $selesai)
+              ->where('jam_selesai', '>', $mulai);
         })
         ->exists();
 
     return $reservasiBentrok;
 }
+
 
 
     
