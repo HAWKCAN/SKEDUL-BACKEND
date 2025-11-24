@@ -61,5 +61,53 @@ class KelasController extends Controller
 
     return response()->json($kelas);
 }
+public function show($id)
+{
+    $kelas = Kelas::find($id);
+
+    if (!$kelas) {
+        return response()->json(['message' => 'Kelas tidak ditemukan'], 404);
+    }
+
+    // ambil waktu sekarang
+    $now = now();
+
+    // CARI RESERVASI AKTIF
+    $reservasiAktif = DB::table('reservasi')
+        ->where('kelas_id', $id)
+        ->where('status', 'approved')
+        ->where('jam_mulai', '<=', $now)
+        ->where('jam_selesai', '>=', $now)
+        ->first();
+
+    // CARI JADWAL AKTIF
+    $jadwalAktif = DB::table('jadwal_kelas')
+        ->where('kelas_id', $id)
+        ->where('jam_mulai', '<=', $now)
+        ->where('jam_selesai', '>=', $now)
+        ->first();
+
+    // SAMAKAN LOGIC DENGAN INDEX
+    if ($jadwalAktif) {
+        $kelas->status = "dipakai";
+        $kelas->dipakai_oleh = $jadwalAktif->user_id;
+        $kelas->jam_mulai = $jadwalAktif->jam_mulai;
+        $kelas->jam_selesai = $jadwalAktif->jam_selesai;
+    }
+    elseif ($reservasiAktif) {
+        $kelas->status = "dipakai";
+        $kelas->dipakai_oleh = $reservasiAktif->user_id;
+        $kelas->jam_mulai = $reservasiAktif->jam_mulai;
+        $kelas->jam_selesai = $reservasiAktif->jam_selesai;
+    }
+    else {
+        $kelas->status = "tersedia";
+        $kelas->dipakai_oleh = null;
+        $kelas->jam_mulai = null;
+        $kelas->jam_selesai = null;
+    }
+
+    return response()->json($kelas);
+}
 
 }
