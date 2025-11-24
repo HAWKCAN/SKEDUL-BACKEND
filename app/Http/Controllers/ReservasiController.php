@@ -80,21 +80,20 @@ class ReservasiController extends Controller
     }
     
 
-
-  private function adaBentrok($kelas_id, $hari, $mulai, $selesai)
+private function adaBentrok($kelas_id, $hari, $mulai, $selesai)
 {
-    // Bentrok dengan jadwal kuliah
+    // Bentrok jadwal kuliah
     $jadwalBentrok = JadwalKelas::where('kelas_id', $kelas_id)
         ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
         ->where(function ($q) use ($mulai, $selesai) {
-            $q->where('jam_mulai', '<', $selesai)
-              ->where('jam_selesai', '>', $mulai);
+            $q->where('jam_mulai', '<=', $mulai)
+              ->where('jam_selesai', '>=', $selesai);
         })
         ->exists();
 
     if ($jadwalBentrok) return true;
 
-    // Bentrok dengan reservasi approved
+    // Bentrok reservasi approved
     $reservasiBentrok = Reservasi::where('kelas_id', $kelas_id)
         ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
         ->where('status', 'approved')
@@ -106,6 +105,7 @@ class ReservasiController extends Controller
 
     return $reservasiBentrok;
 }
+
 
 
 
