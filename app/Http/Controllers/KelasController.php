@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Kelas;
 use App\Models\JadwalKelas;
+use App\Models\Reservasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -114,33 +115,31 @@ public function show($id)
 public function availability(Request $req, $id)
 {
     $hari = $req->query('hari');
-    if (!$hari) return response()->json(['message' => 'Hari wajib'], 400);
+    if (!$hari) {
+        return response()->json(['message' => 'Parameter hari wajib'], 400);
+    }
 
     $kelas = Kelas::find($id);
-    if (!$kelas) return response()->json(['message' => 'Kelas tidak ditemukan'], 404);
+    if (!$kelas) {
+        return response()->json(['message' => 'Kelas tidak ditemukan'], 404);
+    }
 
-    // Jam operasional
     $open = "07:00";
     $close = "17:00";
 
-    // Ambil jadwal dosen
+    // Ambil jadwal kuliah untuk hari terkait (case insensitive)
     $jadwal = JadwalKelas::where('kelas_id', $id)
-                ->where('hari', strtolower($hari))
-                ->orderBy('jam_mulai')
-                ->get();
+        ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
+        ->orderBy('jam_mulai')
+        ->get();
 
-    // ====== Step 1: Buat list interval terpakai (asli db) ======
-    $blocked = [];
-    foreach ($jadwal as $j) {
-        $blocked[] = [
-            "mulai" => substr($j->jam_mulai, 11, 5),
-            "selesai" => substr($j->jam_selesai, 11, 5),
-            "status" => "dipakai",
-            "jenis" => "jadwal"
-        ];
-    }
+    // Ambil reservasi approved
+    $reservasi = Reservasi::where('kelas_id', $id)
+        ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
+        ->where('status', 'approved')
+        ->orderBy('jam_mulai')
+        ->get();
 
-    // ====== Step 2: Buat slot kosong per jam ======
     $slots = [];
     $start = strtotime($open);
     $end = strtotime($close);
@@ -149,38 +148,34 @@ public function availability(Request $req, $id)
         $mulai = date("H:i", $t);
         $selesai = date("H:i", $t + 3600);
 
-        // Cek apakah slot bentrok dengan blok asli
-        $isBlocked = false;
-        foreach ($blocked as $b) {
-            if (!($selesai <= $b["mulai"] || $mulai >= $b["selesai"])) {
-                $isBlocked = true;
-                break;
+        $status = "Tersedia";
+
+        foreach ($jadwal as $j) {
+            if ($mulai < $j->jam_selesai && $selesai > $j->jam_mulai) {
+                $status = "Dipakai (Kuliah)";
             }
         }
 
-        if (!$isBlocked) {
-            $slots[] = [
-                "mulai" => $mulai,
-                "selesai" => $selesai,
-                "status" => "tersedia",
-                "jenis" => "slot"
-            ];
+        foreach ($reservasi as $r) {
+            if ($mulai < $r->jam_selesai && $selesai > $r->jam_mulai) {
+                $status = "Dipakai (Reservasi)";
+            }
         }
+
+        $slots[] = [
+            "jam_mulai" => $mulai,
+            "jam_selesai" => $selesai,
+            "status" => $status
+        ];
     }
-
-    // ====== Gabungkan semua ======
-    $result = array_merge($blocked, $slots);
-
-    usort($result, function($a, $b) {
-        return strcmp($a["mulai"], $b["mulai"]);
-    });
 
     return response()->json([
         "kelas" => $kelas->nama_kelas,
         "hari" => $hari,
-        "slots" => $result
+        "slots" => $slots
     ]);
 }
+
 
 
 }
