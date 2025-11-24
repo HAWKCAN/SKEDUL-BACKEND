@@ -65,6 +65,7 @@ class ReservasiController extends Controller
 
         return response()->json(['message' => 'Reservasi ditolak.']);
     }
+    
 
 
     private function adaBentrok($kelas_id, $hari, $mulai, $selesai)
@@ -100,4 +101,6 @@ class ReservasiController extends Controller
 
         return $reservasiBentrok;
     }
+
+    
 }

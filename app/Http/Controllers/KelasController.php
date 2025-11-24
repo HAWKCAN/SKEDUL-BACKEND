@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Kelas;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class KelasController extends Controller
@@ -109,5 +110,71 @@ public function show($id)
 
     return response()->json($kelas);
 }
+
+public function availability(Request $req, $id)
+{
+    $hari = $req->query('hari');
+    if (!$hari) {
+        return response()->json(['message' => 'Parameter hari wajib.'], 400);
+    }
+
+    $kelas = Kelas::find($id);
+    if (!$kelas) {
+        return response()->json(['message' => 'Kelas tidak ditemukan'], 404);
+    }
+
+    $open = "07:00";
+    $close = "17:00";
+
+    // Ambil jadwal dosen
+    $jadwal = DB::table('jadwal_kelas')
+        ->where('kelas_id', $id)
+        ->where('hari', $hari)
+        ->get();
+
+    // Ambil reservasi yang approved
+    $reservasi = DB::table('reservasi')
+        ->where('kelas_id', $id)
+        ->where('hari', $hari)
+        ->where('status', 'approved')
+        ->get();
+
+    // Bentuk slot 1 jam
+    $slots = [];
+    $start = strtotime($open);
+    $end = strtotime($close);
+
+    for ($t = $start; $t < $end; $t += 3600) {
+        $mulai = date("H:i", $t);
+        $selesai = date("H:i", $t + 3600);
+
+        $status = "kosong";
+
+        foreach ($jadwal as $j) {
+            if ($mulai < $j->jam_selesai && $selesai > $j->jam_mulai) {
+                $status = "dipakai";
+            }
+        }
+
+        foreach ($reservasi as $r) {
+            if ($mulai < $r->jam_selesai && $selesai > $r->jam_mulai) {
+                $status = "dipakai";
+            }
+        }
+
+        $slots[] = [
+            "jam_mulai" => $mulai,
+            "jam_selesai" => $selesai,
+            "status" => $status
+        ];
+    }
+
+    return response()->json([
+        "kelas" => $kelas->nama_kelas,
+        "hari" => $hari,
+        "slots" => $slots
+    ]);
+}
+
 
 }

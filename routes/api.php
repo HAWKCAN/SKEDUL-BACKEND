@@ -13,6 +13,8 @@ Route::middleware(['auth:sanctum', 'role:mahasiswa'])->group(function () {
     Route::get('/mahasiswa/kelas', [KelasController::class, 'index']);
     Route::get('/mahasiswa/kelas/{id}', [KelasController::class, 'show']); 
     Route::post('/reservasi', [ReservasiController::class, 'store']);
+    Route::get('/kelas/{id}/availability', [KelasController::class, 'availability']);
+
 });
 
 
