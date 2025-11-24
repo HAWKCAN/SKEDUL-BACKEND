@@ -37,7 +37,7 @@ class ReservasiController extends Controller
         'kelas_id' => $validated['kelas_id'],
         'user_id' => $req->user()->id,
         'nama' => $validated['nama'],
-        'hari' => $validated['hari'],
+        'Hari' => $validated['hari'],
         'tanggal' => $validated['tanggal'],
         'jam_mulai' => $validated['jam_mulai'],
         'jam_selesai' => $validated['jam_selesai'],
