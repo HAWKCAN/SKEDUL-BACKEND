@@ -79,24 +79,23 @@ class ReservasiController extends Controller
         return response()->json(['message' => 'Reservasi ditolak.']);
     }
     
-
 private function adaBentrok($kelas_id, $hari, $mulai, $selesai)
 {
-    // Bentrok jadwal kuliah
+    // Bentrok jadwal
     $jadwalBentrok = JadwalKelas::where('kelas_id', $kelas_id)
         ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
         ->where(function ($q) use ($mulai, $selesai) {
-            $q->where('jam_mulai', '<=', $mulai)
-              ->where('jam_selesai', '>=', $selesai);
+            $q->where('jam_mulai', '<', $selesai)
+              ->where('jam_selesai', '>', $mulai);
         })
         ->exists();
 
     if ($jadwalBentrok) return true;
 
-    // Bentrok reservasi approved
+    // Bentrok reservasi pending & approved
     $reservasiBentrok = Reservasi::where('kelas_id', $kelas_id)
         ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
-        ->where('status', 'approved')
+        ->whereIn('status', ['approved', 'pending'])
         ->where(function ($q) use ($mulai, $selesai) {
             $q->where('jam_mulai', '<', $selesai)
               ->where('jam_selesai', '>', $mulai);
