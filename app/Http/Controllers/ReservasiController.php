@@ -2,38 +2,40 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Reservasi;
+use App\Models\JadwalKelas;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ReservasiController extends Controller
 {
     public function store(Request $req)
     {
-        $req->validate([
-            'kelas_id' => 'required|int',
-            'jam_mulai' => 'required|date',
-            'jam_selesai' => 'required|date|after:jam_mulai',
-            'Hari' => 'required|hari'
+        $validated = $req->validate([
+            'kelas_id' => 'required|integer',
+            'nama' => 'required|string',
+            'hari' => 'required|string',
+            'tanggal' => 'required|date',
+            'jam_mulai' => 'required',
+            'jam_selesai' => 'required',
+            'alasan' => 'required|string',
         ]);
 
-        if (adaBentrok($req->kelas_id, $req->jam_mulai, $req->jam_selesai, $req->hari)) {
-            return response()->json(['message' => 'Bentrok jadwal.'], 409);
-        }
-
-        $res = Reservasi::create([
-            'kelas_id' => $req->kelas_id,
+        $reservasi = Reservasi::create([
+            'kelas_id' => $validated['kelas_id'],
              'user_id' => $req->user()->id,
-            'jam_mulai' => $req->jam_mulai,
-            'jam_selesai' => $req->jam_selesai,
-            'Hari' => $req -> Hari,
-
-            'alasan' => $req->alasan,
-            'status' => 'pending'
+            'nama' => $validated['nama'],
+            'hari' => $validated['hari'],
+            'tanggal' => $validated['tanggal'],
+            'jam_mulai' => $validated['jam_mulai'],
+            'jam_selesai' => $validated['jam_selesai'],
+            'alasan' => $validated['alasan'],
+            'status' => 'pending',
         ]);
 
-        return response()->json(['message' => 'Reservasi dibuat.', 'data' => $res]);
+        return response()->json([
+            'message' => 'Reservasi berhasil diajukan',
+            'data' => $reservasi
+        ]);
     }
 
     public function approve($id)
@@ -44,7 +46,8 @@ class ReservasiController extends Controller
             return response()->json(['message' => 'Reservasi tidak valid.'], 400);
         }
 
-        if (adaBentrok($res->kelas_id, $res->jam_mulai, $res->jam_selesai, $res->Hari)) {
+        // Cek bentrok jadwal kuliah dan reservasi lain
+        if ($this->adaBentrok($res->kelas_id, $res->hari, $res->jam_mulai, $res->jam_selesai)) {
             return response()->json(['message' => 'Gagal approve. Jadwal bentrok.'], 409);
         }
 
@@ -61,5 +64,40 @@ class ReservasiController extends Controller
         $res->save();
 
         return response()->json(['message' => 'Reservasi ditolak.']);
+    }
+
+
+    private function adaBentrok($kelas_id, $hari, $mulai, $selesai)
+    {
+        // Cek bentrok dengan jadwal kuliah
+        $jadwalBentrok = JadwalKelas::where('kelas_id', $kelas_id)
+            ->where('hari', $hari)
+            ->where(function ($q) use ($mulai, $selesai) {
+                $q->whereBetween('jam_mulai', [$mulai, $selesai])
+                  ->orWhereBetween('jam_selesai', [$mulai, $selesai])
+                  ->orWhere(function ($q2) use ($mulai, $selesai) {
+                      $q2->where('jam_mulai', '<=', $mulai)
+                         ->where('jam_selesai', '>=', $selesai);
+                  });
+            })
+            ->exists();
+
+        if ($jadwalBentrok) return true;
+
+        // Cek bentrok dengan reservasi lain yang sudah approved
+        $reservasiBentrok = Reservasi::where('kelas_id', $kelas_id)
+            ->where('hari', $hari)
+            ->where('status', 'approved')
+            ->where(function ($q) use ($mulai, $selesai) {
+                $q->whereBetween('jam_mulai', [$mulai, $selesai])
+                  ->orWhereBetween('jam_selesai', [$mulai, $selesai])
+                  ->orWhere(function ($q2) use ($mulai, $selesai) {
+                      $q2->where('jam_mulai', '<=', $mulai)
+                         ->where('jam_selesai', '>=', $selesai);
+                  });
+            })
+            ->exists();
+
+        return $reservasiBentrok;
     }
 }
