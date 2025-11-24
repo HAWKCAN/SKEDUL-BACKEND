@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Reservasi;
 use App\Models\JadwalKelas;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class ReservasiController extends Controller
 {
@@ -79,26 +80,45 @@ class ReservasiController extends Controller
         return response()->json(['message' => 'Reservasi ditolak.']);
     }
     
+
+
 private function adaBentrok($kelas_id, $hari, $mulai, $selesai)
 {
-    // Bentrok jadwal
+    // $mulai & $selesai dari frontend: "2025-11-24 09:00:00"
+    $mulaiDT   = Carbon::parse($mulai);
+    $selesaiDT = Carbon::parse($selesai);
+
+    // Untuk jadwal_kelas kita cuma butuh JAM
+    $mulaiTime   = $mulaiDT->format('H:i:s');
+    $selesaiTime = $selesaiDT->format('H:i:s');
+
+    // Untuk reservasi lain kita butuh TANGGAL yg sama
+    $tanggal = $mulaiDT->toDateString();   // "2025-11-24"
+
+    // 1️⃣ Cek bentrok dengan JADWAL KULIAH (berlaku tiap minggu)
+    //    -> filter by hari
+    //    -> bandingkan JAM saja (TIME), abaikan tanggal
     $jadwalBentrok = JadwalKelas::where('kelas_id', $kelas_id)
         ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
-        ->where(function ($q) use ($mulai, $selesai) {
-            $q->where('jam_mulai', '<', $selesai)
-              ->where('jam_selesai', '>', $mulai);
+        ->where(function ($q) use ($mulaiTime, $selesaiTime) {
+            $q->whereRaw('TIME(jam_mulai) < ?', [$selesaiTime])
+              ->whereRaw('TIME(jam_selesai) > ?', [$mulaiTime]);
         })
         ->exists();
 
-    if ($jadwalBentrok) return true;
+    if ($jadwalBentrok) {
+        return true;
+    }
 
-    // Bentrok reservasi pending & approved
+    // 2️⃣ Cek bentrok dengan RESERVASI LAIN di tanggal yg sama
+    //    -> cuma cek yg pending / approved
+    //    -> full datetime overlap
     $reservasiBentrok = Reservasi::where('kelas_id', $kelas_id)
-        ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
+        ->whereDate('jam_mulai', $tanggal)
         ->whereIn('status', ['approved', 'pending'])
-        ->where(function ($q) use ($mulai, $selesai) {
-            $q->where('jam_mulai', '<', $selesai)
-              ->where('jam_selesai', '>', $mulai);
+        ->where(function ($q) use ($mulaiDT, $selesaiDT) {
+            $q->where('jam_mulai', '<', $selesaiDT)
+              ->where('jam_selesai', '>', $mulaiDT);
         })
         ->exists();
 
