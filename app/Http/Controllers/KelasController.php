@@ -114,7 +114,7 @@ public function show($id)
 }
 public function availability(Request $req, $id)
 {
-    $hari = strtolower($req->query('hari'));
+    $hari = $req->query('hari');
     if (!$hari) {
         return response()->json(['message' => 'Parameter hari wajib'], 400);
     }
@@ -124,78 +124,61 @@ public function availability(Request $req, $id)
         return response()->json(['message' => 'Kelas tidak ditemukan'], 404);
     }
 
-    // jam operasional
-    $open = strtotime("07:00");
-    $close = strtotime("17:00");
+    // Jam operasional
+    $open = "07:00";
+    $close = "17:00";
 
     // Ambil jadwal kuliah hari itu
     $jadwal = JadwalKelas::where('kelas_id', $id)
-        ->whereRaw('LOWER(hari) = ?', [$hari])
-        ->orderBy('jam_mulai')
+        ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
         ->get();
 
-    // Ambil reservasi yang approved
+    // Ambil reservasi hari itu
     $reservasi = Reservasi::where('kelas_id', $id)
-        ->whereRaw('LOWER(hari) = ?', [$hari])
+        ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
         ->where('status', 'approved')
-        ->orderBy('jam_mulai')
         ->get();
 
     $slots = [];
+    $start = strtotime($open);
+    $end = strtotime($close);
 
+    // LOOP SLOT PER 1 JAM
+    for ($t = $start; $t < $end; $t += 3600) {
 
-    foreach ($jadwal as $j) {
-        $slots[] = [
-            "jam_mulai" => date("H:i", strtotime($j->jam_mulai)),
-            "jam_selesai" => date("H:i", strtotime($j->jam_selesai)),
-            "status" => "Dipakai (Kuliah)"
-        ];
-    }
+        $mulai = date("H:i", $t);
+        $selesai = date("H:i", $t + 3600);
 
-    foreach ($reservasi as $r) {
-        $slots[] = [
-            "jam_mulai" => date("H:i", strtotime($r->jam_mulai)),
-            "jam_selesai" => date("H:i", strtotime($r->jam_selesai)),
-            "status" => "Dipakai (Reservasi)"
-        ];
-    }
+        $status = "Tersedia";
 
- 
-    // Merge jadwal & reservasi biar urut
-    $all = collect($slots)->sortBy('jam_mulai')->values();
-
-    $lastEnd = $open;
-
-    foreach ($all as $item) {
-        $start = strtotime($item['jam_mulai']);
-        if ($lastEnd < $start) {
-            // Masih tersedia
-            $slots[] = [
-                "jam_mulai" => date("H:i", $lastEnd),
-                "jam_selesai" => date("H:i", $start),
-                "status" => "Tersedia"
-            ];
+        // Cek bentrok JADWAL KULIAH
+        foreach ($jadwal as $j) {
+            if ($mulai < $j->jam_selesai && $selesai > $j->jam_mulai) {
+                $status = "Dipakai (Kuliah)";
+            }
         }
-        $lastEnd = max($lastEnd, strtotime($item['jam_selesai']));
-    }
 
-    if ($lastEnd < $close) {
+        // Cek bentrok RESERVASI APPROVED
+        foreach ($reservasi as $r) {
+            if ($mulai < $r->jam_selesai && $selesai > $r->jam_mulai) {
+                $status = "Dipakai (Reservasi)";
+            }
+        }
+
         $slots[] = [
-            "jam_mulai" => date("H:i", $lastEnd),
-            "jam_selesai" => date("H:i", $close),
-            "status" => "Tersedia"
+            "jam_mulai" => $mulai,
+            "jam_selesai" => $selesai,
+            "status" => $status,
         ];
     }
-
-    // 5️⃣ urutkan hasil final
-    $slots = collect($slots)->sortBy('jam_mulai')->values();
 
     return response()->json([
         "kelas" => $kelas->nama_kelas,
-        "hari" => ucfirst($hari),
+        "hari" => $hari,
         "slots" => $slots
     ]);
 }
+
 
 
 
