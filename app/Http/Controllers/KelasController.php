@@ -151,16 +151,24 @@ public function availability(Request $req, $id)
         $status = "kosong";
 
         foreach ($jadwal as $j) {
-            if ($mulai < $j->jam_selesai && $selesai > $j->jam_mulai) {
-                $status = "dipakai";
-            }
-        }
+    $jadwalMulai = date("H:i", strtotime($j->jam_mulai));
+    $jadwalSelesai = date("H:i", strtotime($j->jam_selesai));
 
-        foreach ($reservasi as $r) {
-            if ($mulai < $r->jam_selesai && $selesai > $r->jam_mulai) {
-                $status = "dipakai";
-            }
-        }
+    if ($mulai < $jadwalSelesai && $selesai > $jadwalMulai) {
+        $status = "dipakai";
+    }
+}
+
+
+     foreach ($reservasi as $r) {
+    $resMulai = date("H:i", strtotime($r->jam_mulai));
+    $resSelesai = date("H:i", strtotime($r->jam_selesai));
+
+    if ($mulai < $resSelesai && $selesai > $resMulai) {
+        $status = "dipakai";
+    }
+}
+
 
         $slots[] = [
             "jam_mulai" => $mulai,
