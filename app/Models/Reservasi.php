@@ -14,4 +14,9 @@ class Reservasi extends Model
         'status', 'alasan',
         'Hari'
     ];
+    public function kelas()
+{
+    return $this->belongsTo(\App\Models\Kelas::class, 'kelas_id');
 }
+}
+

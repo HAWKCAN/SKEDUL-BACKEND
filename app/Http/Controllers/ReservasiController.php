@@ -124,6 +124,25 @@ private function adaBentrok($kelas_id, $hari, $mulai, $selesai)
 
     return $reservasiBentrok;
 }
+public function pendingList()
+{
+    $data = Reservasi::with('kelas')
+        ->where('status', 'pending')
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return response()->json($data);
+}
+
+public function history()
+{
+    $data = Reservasi::with('kelas')
+        ->whereIn('status', ['approved', 'rejected'])
+        ->orderBy('updated_at', 'desc')
+        ->get();
+
+    return response()->json($data);
+}
 
 
 

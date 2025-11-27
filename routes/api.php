@@ -21,8 +21,10 @@ Route::middleware(['auth:sanctum', 'role:mahasiswa'])->group(function () {
 // Admin
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/admin/register', [AuthController::class, 'register']);
-    Route::patch('/reservasi/{id}/approve', [ReservasiController::class, 'approve']);
-    Route::patch('/reservasi/{id}/reject', [ReservasiController::class, 'reject']);
+      Route::get('/admin/reservasi/pending', [ReservasiController::class, 'pendingList']);
+    Route::get('/admin/reservasi/history', [ReservasiController::class, 'history']);
+    Route::patch('/admin/reservasi/{id}/approve', [ReservasiController::class, 'approve']);
+    Route::patch('/admin/reservasi/{id}/reject', [ReservasiController::class, 'reject']);
 });
 
 // Dosen
