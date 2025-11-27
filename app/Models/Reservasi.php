@@ -8,12 +8,18 @@ class Reservasi extends Model
 {
     protected $table = 'reservasi';
 
-    protected $fillable = [
-        'kelas_id', 'user_id',
-        'jam_mulai', 'jam_selesai',
-        'status', 'alasan',
-        'Hari'
-    ];
+protected $fillable = [
+    'kelas_id',
+    'user_id',
+    'nama',
+    'hari',
+    'tanggal',
+    'jam_mulai',
+    'jam_selesai',
+    'status',
+    'alasan'
+];
+
     public function kelas()
 {
     return $this->belongsTo(\App\Models\Kelas::class, 'kelas_id');
