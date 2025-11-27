@@ -9,15 +9,14 @@ class Reservasi extends Model
     protected $table = 'reservasi';
 
     protected $fillable = [
-        'kelas_id', 
+        'kelas_id',
         'user_id',
-        'nama',
         'hari',
         'tanggal',
-        'jam_mulai', 
+        'jam_mulai',
         'jam_selesai',
-        'status', 
-        'alasan'
+        'status',
+        'alasan',
     ];
 
     public function kelas()
