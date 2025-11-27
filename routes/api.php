@@ -25,6 +25,8 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/admin/reservasi/history', [ReservasiController::class, 'history']);
     Route::patch('/admin/reservasi/{id}/approve', [ReservasiController::class, 'approve']);
     Route::patch('/admin/reservasi/{id}/reject', [ReservasiController::class, 'reject']);
+    Route::delete('/admin/reservasi/history/reset', [ReservasiController::class, 'resetHistory']);
+
 });
 
 // Dosen

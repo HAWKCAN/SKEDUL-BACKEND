@@ -122,4 +122,13 @@ class ReservasiController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
     }
+    public function resetHistory()
+{
+    Reservasi::whereIn('status', ['approved', 'rejected'])->delete();
+
+    return response()->json([
+        'message' => 'History berhasil direset.'
+    ]);
+}
+
 }
