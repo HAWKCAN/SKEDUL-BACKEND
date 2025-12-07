@@ -27,36 +27,37 @@ class AuthController extends Controller
     'token' => $token,
 ]);
     }
-
- public function register(Request $request)
+public function register(Request $request)
 {
     try {
-        $validated = $request->validate([
+
+        $validated = validator($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'role' => 'required|in:admin,dosen,mahasiswa',
-        ]);
+        ])->validate();
 
-            $user = User::create([
+        $user = User::create([
             'name' => $request->input('name', 'User Tanpa Nama'),
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
         ]);
 
-
         return response()->json([
             'message' => 'User berhasil dibuat',
             'user' => $user
-        ]);
+        ], 201);
+
     } catch (\Exception $e) {
         return response()->json([
-            'message' => 'Terjadi kesalahan saat register',
-            'error' => $e->getMessage()
-        ], 500);
+            'message' => 'Gagal membuat user',
+            'error'   => $e->getMessage()
+        ], 400);
     }
 }
+
 
     public function logout(Request $request)
 {
