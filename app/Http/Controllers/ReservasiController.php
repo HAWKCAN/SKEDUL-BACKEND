@@ -37,7 +37,7 @@ class ReservasiController extends Controller
             'kelas_id'   => $validated['kelas_id'],
             'user_id'    => $req->user()->id,
             'hari'       => $validated['hari'],
-            'tanggal'    => $validated['created_at'],
+            'tanggal'    => $validated['tanggal'],
             'jam_mulai'  => $validated['jam_mulai'],
             'jam_selesai'=> $validated['jam_selesai'],
             'alasan'     => $validated['alasan'],
@@ -77,35 +77,36 @@ class ReservasiController extends Controller
         return response()->json(['message' => 'Reservasi ditolak.']);
     }
 
-    private function adaBentrok($kelas_id, $hari, $mulai, $selesai)
-    {
-        $mulaiDT   = Carbon::parse($mulai);
-        $selesaiDT = Carbon::parse($selesai);
+   private function adaBentrok($kelas_id, $hari, $mulai, $selesai)
+{
+    $mulaiDT   = Carbon::parse($mulai);
+    $selesaiDT = Carbon::parse($selesai);
 
-        $mulaiTime   = $mulaiDT->format('H:i:s');
-        $selesaiTime = $selesaiDT->format('H:i:s');
+    $mulaiTime   = $mulaiDT->format('H:i:s');
+    $selesaiTime = $selesaiDT->format('H:i:s');
 
-        $tanggal = $mulaiDT->toDateString();
+    $tanggal = $mulaiDT->toDateString();
 
-        // Periksa jadwal kuliah mingguan
-        $jadwalBentrok = JadwalKelas::where('kelas_id', $kelas_id)
-            ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
-            ->whereRaw('TIME(jam_mulai) < ?', [$selesaiTime])
-            ->whereRaw('TIME(jam_selesai) > ?', [$mulaiTime])
-            ->exists();
+    // Bentrok dengan jadwal kuliah (weekly schedule)
+    $jadwalBentrok = JadwalKelas::where('kelas_id', $kelas_id)
+        ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
+        ->whereRaw('TIME(jam_mulai) < ?', [$selesaiTime])
+        ->whereRaw('TIME(jam_selesai) > ?', [$mulaiTime])
+        ->exists();
 
-        if ($jadwalBentrok) return true;
+    if ($jadwalBentrok) return true;
 
-        // Periksa reservasi lain di tanggal yang sama
-        $reservasiBentrok = Reservasi::where('kelas_id', $kelas_id)
-            ->whereDate('jam_mulai', $tanggal)
-            ->whereIn('status', ['approved', 'pending'])
-            ->where('jam_mulai', '<', $selesaiDT)
-            ->where('jam_selesai', '>', $mulaiDT)
-            ->exists();
+    // Bentrok dengan reservasi lain
+    $reservasiBentrok = Reservasi::where('kelas_id', $kelas_id)
+        ->where('tanggal', $tanggal) // gunakan kolom tanggal yang benar
+        ->whereIn('status', ['approved', 'pending'])
+        ->where('jam_mulai', '<', $selesaiDT)
+        ->where('jam_selesai', '>', $mulaiDT)
+        ->exists();
 
-        return $reservasiBentrok;
-    }
+    return $reservasiBentrok;
+}
+
 
     public function pendingList()
     {
