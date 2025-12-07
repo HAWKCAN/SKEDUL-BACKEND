@@ -166,17 +166,22 @@ class KelasController extends Controller
         ->get();
 }
 
-public function cancelKelas(Request $req, $id)
+public function cancelKelas($id)
 {
-    // pastikan dosen cuma bisa batalin jadwal miliknya sendiri
-    $jadwal = JadwalKelas::where('id', $id)
-        ->where('user_id', $req->user()->id)
-        ->firstOrFail();
+    $kelas = JadwalKelas::findOrFail($id);
 
-    $jadwal->delete();
+    $kelas->is_canceled = 1;
+    $kelas->save();
 
-    return response()->json(['message' => 'Kelas berhasil dibatalkan']);
+    return response()->json([
+        'message' => 'Kelas dibatalkan',
+        'kelas_id' => $kelas->kelas_id,
+        'hari' => $kelas->hari,
+        'jam_mulai' => $kelas->jam_mulai,
+        'jam_selesai' => $kelas->jam_selesai
+    ]);
 }
+
 public function kelasTersedia(Request $req)
 {
     $now = now();
@@ -197,6 +202,36 @@ public function kelasTersedia(Request $req)
     }
 
     return response()->json($kelas);
+}
+public function kelasPengganti(Request $req)
+{
+    $kelasId = $req->query('kelas_id');
+    $hari = $req->query('hari');
+    $mulai = $req->query('jam_mulai');
+    $selesai = $req->query('jam_selesai');
+
+    // Ambil semua kelas
+    $kelas = Kelas::all();
+
+    // Hilangkan kelas yang sama
+    $kelas = $kelas->filter(fn($k) => $k->id != $kelasId);
+
+    // Cari kelas yang kosong
+    $available = [];
+    foreach ($kelas as $k) {
+        $dipakai = DB::table('reservasi')
+            ->where('kelas_id', $k->id)
+            ->where('hari', $hari)
+            ->where('jam_mulai', '<', $selesai)
+            ->where('jam_selesai', '>', $mulai)
+            ->exists();
+
+        if (!$dipakai) {
+            $available[] = $k;
+        }
+    }
+
+    return response()->json($available);
 }
 
 

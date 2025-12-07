@@ -28,6 +28,8 @@ Route::middleware(['auth:sanctum', 'role:dosen'])->group(function () {
 
     Route::get('/dosen/kelas', [KelasController::class, 'kelasDosen']); 
     Route::delete('/dosen/kelas/{id}/cancel', [KelasController::class, 'cancelKelas']);
+    Route::get('/dosen/kelas-pengganti', [KelasController::class, 'kelasPengganti']);
+
 
 Route::get('/dosen/kelas-tersedia', [KelasController::class, 'kelasTersedia']);
 
