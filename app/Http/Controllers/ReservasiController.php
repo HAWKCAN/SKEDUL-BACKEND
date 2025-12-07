@@ -87,12 +87,16 @@ class ReservasiController extends Controller
 
     $tanggal = $mulaiDT->toDateString();
 
-    // Bentrok dengan jadwal kuliah (weekly schedule)
-    $jadwalBentrok = JadwalKelas::where('kelas_id', $kelas_id)
-        ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
-        ->whereRaw('TIME(jam_mulai) < ?', [$selesaiTime])
-        ->whereRaw('TIME(jam_selesai) > ?', [$mulaiTime])
-        ->exists();
+   $jadwalBentrok = JadwalKelas::where('kelas_id', $kelas_id)
+    ->whereRaw('LOWER(hari) = ?', [strtolower($hari)])
+    ->whereNotNull('jam_mulai')
+    ->whereNotNull('jam_selesai')
+    ->whereRaw("jam_mulai <> '0000-00-00 00:00:00'")
+    ->whereRaw("jam_selesai <> '0000-00-00 00:00:00'")
+    ->whereRaw('TIME(jam_mulai) < ?', [$selesaiTime])
+    ->whereRaw('TIME(jam_selesai) > ?', [$mulaiTime])
+    ->exists();
+
 
     if ($jadwalBentrok) return true;
 
