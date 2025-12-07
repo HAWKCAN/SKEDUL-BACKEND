@@ -138,5 +138,14 @@ $reservasiBentrok = Reservasi::where('kelas_id', $kelas_id)
         'message' => 'History berhasil direset.'
     ]);
 }
+public function reservasiMahasiswa(Request $req)
+{
+    $userId = $req->user()->id;
+
+    return Reservasi::with('kelas')
+        ->where('user_id', $userId)
+        ->orderBy('created_at', 'desc')
+        ->get();
+}
 
 }
