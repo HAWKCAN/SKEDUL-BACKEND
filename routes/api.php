@@ -29,7 +29,8 @@ Route::middleware(['auth:sanctum', 'role:dosen'])->group(function () {
     Route::get('/dosen/kelas', [KelasController::class, 'kelasDosen']); 
     Route::delete('/dosen/kelas/{id}/cancel', [KelasController::class, 'cancelKelas']);
 
-    Route::get('/dosen/kelas-tersedia', [KelasController::class, 'index']); // buat pinjam kelas
+Route::get('/dosen/kelas-tersedia', [KelasController::class, 'kelasTersedia']);
+
 
     Route::post('/dosen/reservasi', [ReservasiController::class, 'store']);
     Route::get('/dosen/reservasi', [ReservasiController::class, 'reservasiDosen']);

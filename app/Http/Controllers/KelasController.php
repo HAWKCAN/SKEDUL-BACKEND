@@ -177,6 +177,28 @@ public function cancelKelas(Request $req, $id)
 
     return response()->json(['message' => 'Kelas berhasil dibatalkan']);
 }
+public function kelasTersedia(Request $req)
+{
+    $now = now();
+
+    $kelas = Kelas::all();
+
+    $jadwalDosen = DB::table('jadwal_kelas')
+        ->where('user_id', $req->user()->id)
+        ->pluck('kelas_id');
+
+    // Jangan tampilkan kelas yang sedang dipakai dosen pada jadwal normalnya
+    foreach ($kelas as $k) {
+        if ($jadwalDosen->contains($k->id)) {
+            $k->tidak_boleh_dipinjam = true;
+        } else {
+            $k->tidak_boleh_dipinjam = false;
+        }
+    }
+
+    return response()->json($kelas);
+}
+
 
 }
 
