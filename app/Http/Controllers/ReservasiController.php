@@ -100,13 +100,16 @@ class ReservasiController extends Controller
 
     if ($jadwalBentrok) return true;
 
-    // Bentrok dengan reservasi lain
-    $reservasiBentrok = Reservasi::where('kelas_id', $kelas_id)
-        ->where('tanggal', $tanggal) // gunakan kolom tanggal yang benar
-        ->whereIn('status', ['approved', 'pending'])
-        ->where('jam_mulai', '<', $selesaiDT)
-        ->where('jam_selesai', '>', $mulaiDT)
-        ->exists();
+  $currentId = request()->route('id');
+
+$reservasiBentrok = Reservasi::where('kelas_id', $kelas_id)
+    ->where('tanggal', $tanggal)
+    ->whereIn('status', ['approved', 'pending'])
+    ->when($currentId, fn($q) => $q->where('id', '!=', $currentId))
+    ->where('jam_mulai', '<', $selesaiDT)
+    ->where('jam_selesai', '>', $mulaiDT)
+    ->exists();
+
 
     return $reservasiBentrok;
 }
