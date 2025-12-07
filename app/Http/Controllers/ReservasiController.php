@@ -149,10 +149,13 @@ public function reservasiMahasiswa(Request $req)
 }
 public function reservasiDosen(Request $req)
 {
+    $userId = $req->user()->id;
+
     return Reservasi::with('kelas')
-        ->where('user_id', $req->user()->id)
+        ->where('user_id', $userId)
         ->orderBy('created_at', 'desc')
         ->get();
 }
+
 
 }

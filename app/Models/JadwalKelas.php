@@ -2,17 +2,31 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class JadwalKelas extends Model
 {
+    use HasFactory;
+
     protected $table = 'jadwal_kelas';
 
     protected $fillable = [
-        'kelas_id', 'user_id',
+        'kelas_id',
+        'user_id',
         'mata_kuliah',
-        'jam_mulai', 'jam_selesai',
-        'Hari'
-
+        'jam_mulai',
+        'jam_selesai',
+        'hari',
     ];
+
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class, 'kelas_id');
+    }
+
+    public function dosen()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

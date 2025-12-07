@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class KelasController extends Controller
 {
-    // ==========================
-    // 1. LIST KELAS (MAHASISWA)
-    // ==========================
+
     public function index()
     {
         $now = now();
@@ -61,9 +59,7 @@ class KelasController extends Controller
         return response()->json($kelas);
     }
 
-    // ==========================
-    // 2. SHOW DETAIL KELAS
-    // ==========================
+
     public function show($id)
     {
         $kelas = Kelas::find($id);
@@ -103,9 +99,6 @@ class KelasController extends Controller
         return response()->json($kelas);
     }
 
-    // ==========================
-    // 3. CEK SLOT KETERSEDIAAN
-    // ==========================
     public function availability(Request $req, $id)
     {
         $hari = $req->query('hari');
@@ -163,26 +156,27 @@ class KelasController extends Controller
         ]);
     }
 
-    // ==========================
-    // 4. KELAS DOSEN (BARU)
-    // ==========================
-    public function kelasDosen(Request $req)
-    {
-        return JadwalKelas::with("kelas")
-            ->where("user_id", $req->user()->id)
-            ->orderBy("hari")
-            ->get();
-    }
+ public function kelasDosen(Request $req)
+{
+    // semua jadwal kelas milik dosen yg login
+    return JadwalKelas::with('kelas')
+        ->where('user_id', $req->user()->id)
+        ->orderBy('hari')
+        ->orderBy('jam_mulai')
+        ->get();
+}
 
-    // ==========================
-    // 5. DOSEN BATALKAN KELAS
-    // ==========================
-    public function cancelKelas($id)
-    {
-        $jadwal = JadwalKelas::findOrFail($id);
-        $jadwal->delete();
+public function cancelKelas(Request $req, $id)
+{
+    // pastikan dosen cuma bisa batalin jadwal miliknya sendiri
+    $jadwal = JadwalKelas::where('id', $id)
+        ->where('user_id', $req->user()->id)
+        ->firstOrFail();
 
-        return response()->json(["message" => "Kelas berhasil dibatalkan"]);
-    }
+    $jadwal->delete();
+
+    return response()->json(['message' => 'Kelas berhasil dibatalkan']);
+}
+
 }
 
