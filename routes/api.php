@@ -4,9 +4,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReservasiController;
 use App\Http\Controllers\KelasController;
+use App\Http\Controllers\JadwalKelasController;
+use App\Models\User;
+use App\Models\Kelas;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
 
 // ---------------------------
 // MAHASISWA
@@ -19,6 +23,8 @@ Route::middleware(['auth:sanctum', 'role:mahasiswa'])->group(function () {
 
     Route::post('/mahasiswa/reservasi', [ReservasiController::class, 'store']);
     Route::get('/mahasiswa/reservasi', [ReservasiController::class, 'reservasiMahasiswa']);
+    Route::patch('/mahasiswa/reservasi/{id}/cancel', [ReservasiController::class, 'cancel']);
+
 });
 
 // ---------------------------
@@ -48,4 +54,25 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::patch('/admin/reservasi/{id}/approve', [ReservasiController::class, 'approve']);
     Route::patch('/admin/reservasi/{id}/reject', [ReservasiController::class, 'reject']);
     Route::delete('/admin/reservasi/history/reset', [ReservasiController::class, 'resetHistory']);
+
+    Route::post('/admin/jadwal-kelas', [JadwalKelasController::class, 'store']);
+    Route::get('/admin/jadwal-kelas', [JadwalKelasController::class, 'index']);
+
+    Route::get('/admin/dosen', fn () =>
+        \App\Models\User::where('role', 'dosen')->get()
+    );
+
+    Route::get('/admin/kelas', fn () =>
+        \App\Models\Kelas::all()
+    );
+        Route::get('/admin/jadwal-kelas/dosen', function () {
+        return User::where('role', 'dosen')
+            ->select('id', 'name')
+            ->get();
+    });
+
+    Route::get('/admin/jadwal-kelas/kelas', function () {
+        return Kelas::select('id', 'nama_kelas', 'lokasi')
+            ->get();
+    });
 });

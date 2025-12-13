@@ -99,62 +99,71 @@ class KelasController extends Controller
         return response()->json($kelas);
     }
 
-    public function availability(Request $req, $id)
-    {
-        $hari = $req->query('hari');
-        if (!$hari) return response()->json(['message' => 'Parameter hari wajib'], 400);
+  public function availability(Request $request, $id)
+{
+    $hari = $request->query('hari');      
+    $tanggal = $request->query('tanggal'); 
 
-        $kelas = Kelas::find($id);
-        if (!$kelas) return response()->json(['message' => 'Kelas tidak ditemukan'], 404);
 
-        $open = "07:00";
-        $close = "17:00";
+    $jadwal = DB::table('jadwal_kelas')
+        ->where('kelas_id', $id)
+        ->where('hari', $hari)
+        ->where('is_canceled', 0)
+        ->get();
 
-        $jadwal = DB::table('jadwal_kelas')
-            ->where('kelas_id', $id)
-            ->where('hari', $hari)
-            ->get();
 
-        $reservasi = DB::table('reservasi')
-            ->where('kelas_id', $id)
-            ->where('hari', $hari)
-            ->where('status', 'approved')
-            ->get();
+    $reservasi = DB::table('reservasi')
+        ->where('kelas_id', $id)
+        ->whereDate('tanggal', $tanggal)
+        ->where('status', 'approved')
+        ->get();
 
-        $slots = [];
-        for ($t = strtotime($open); $t < strtotime($close); $t += 3600) {
-            $mulai = date("H:i", $t);
-            $selesai = date("H:i", $t + 3600);
+    $slots = [];
 
-            $status = "kosong";
+  for ($jam = 7; $jam < 17; $jam++) {
+    $mulai = sprintf('%02d:00', $jam);
+    $selesai = sprintf('%02d:00', $jam + 1);
 
-            foreach ($jadwal as $j) {
-                if ($mulai < date("H:i", strtotime($j->jam_selesai)) && 
-                    $selesai > date("H:i", strtotime($j->jam_mulai))) {
-                    $status = "dipakai";
-                }
-            }
+    $status = 'kosong';
 
-            foreach ($reservasi as $r) {
-                if ($mulai < date("H:i", strtotime($r->jam_selesai)) && 
-                    $selesai > date("H:i", strtotime($r->jam_mulai))) {
-                    $status = "dipakai";
-                }
-            }
+    // === CEK JADWAL MATKUL (HARI SAJA) ===
+    foreach ($jadwal as $j) {
+        $jm = substr($j->jam_mulai, 11, 5);   // ambil jam saja
+        $js = substr($j->jam_selesai, 11, 5);
 
-            $slots[] = [
-                "jam_mulai" => $mulai,
-                "jam_selesai" => $selesai,
-                "status" => $status
-            ];
+        if ($mulai < $js && $selesai > $jm) {
+            $status = 'dipakai';
+            break;
         }
-
-        return response()->json([
-            "kelas" => $kelas->nama_kelas,
-            "hari" => $hari,
-            "slots" => $slots
-        ]);
     }
+
+    // === CEK RESERVASI (TANGGAL + JAM) ===
+    if ($status === 'kosong') {
+        foreach ($reservasi as $r) {
+            $rm = substr($r->jam_mulai, 11, 5);
+            $rs = substr($r->jam_selesai, 11, 5);
+
+            if ($mulai < $rs && $selesai > $rm) {
+                $status = 'dipakai';
+                break;
+            }
+        }
+    }
+
+    $slots[] = [
+        'jam_mulai' => $mulai,
+        'jam_selesai' => $selesai,
+        'status' => $status,
+    ];
+}
+
+    return response()->json([
+        'hari' => $hari,
+        'tanggal' => $tanggal,
+        'slots' => $slots
+    ]);
+}
+
 
  public function kelasDosen(Request $req)
 {

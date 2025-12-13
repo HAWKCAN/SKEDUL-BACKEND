@@ -6,7 +6,7 @@ use App\Models\Reservasi;
 use App\Models\JadwalKelas;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-
+use Illuminate\Support\Facades\DB;
 class ReservasiController extends Controller
 {
     public function store(Request $req)
@@ -156,6 +156,36 @@ public function reservasiDosen(Request $req)
         ->orderBy('created_at', 'desc')
         ->get();
 }
+
+  public function cancel(Request $request, $id)
+    {
+        $user = $request->user();
+
+        // Ambil reservasi sesuai ID, milik user, dan status pending
+        $reservasi = DB::table('reservasi')
+            ->where('id', $id)
+            ->where('user_id', $user->id)
+            ->where('status', 'pending') // Hanya pending bisa dibatalkan
+            ->first();
+
+        if (!$reservasi) {
+            return response()->json([
+                'message' => 'Reservasi tidak ditemukan atau tidak bisa dibatalkan'
+            ], 403);
+        }
+
+        // Update status menjadi canceled
+        DB::table('reservasi')
+            ->where('id', $id)
+            ->update([
+                'status' => 'canceled',
+                'updated_at' => now(),
+            ]);
+
+        return response()->json([
+            'message' => 'Reservasi berhasil dibatalkan'
+        ]);
+    }
 
 
 }

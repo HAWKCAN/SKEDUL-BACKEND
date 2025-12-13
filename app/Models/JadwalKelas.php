@@ -10,6 +10,7 @@ class JadwalKelas extends Model
     use HasFactory;
 
     protected $table = 'jadwal_kelas';
+        const UPDATED_AT = 'update_at';
 
     protected $fillable = [
         'kelas_id',
